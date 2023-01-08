@@ -3,7 +3,7 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 12/29/2022 08:56:43 PM
+// Create Date: 01/07/2023 07:08:39 PM
 // Design Name: 
 // Module Name: tsi107
 // Project Name: 
@@ -19,9 +19,8 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
 module tsi107(AACK, ARTRY, A, BG0, BR0, CLK, CS, DBG0, DH, DL, DP, SDCAS, SDMA, SDRAS, TA, TEA, TBST, TS, TSIZ, TT, WE, WT, CI, GBL);
-inout   [0:7]DP;
+input   [0:7]DP;
 input   CI;
 input   GBL;
 output  TEA;
@@ -29,7 +28,7 @@ output  TEA;
 wire    [0:7]DP;
 wire    CI;
 wire    GBL;
-wire    TEA;
+reg    TEA;
 
 input   BR0;
 input   CLK;
@@ -43,7 +42,7 @@ output  ARTRY;
 output  BG0;
 output  [0:7]CS;
 output  DBG0;
-output  [0:31]DH;
+input  [0:31]DH;
 output  SDCAS;
 output  [0:11]SDMA;
 output  SDRAS;
@@ -61,7 +60,8 @@ wire    BR0;
 wire    CLK;
 reg     [0:7]CS;
 reg     DBG0;
-reg     [0:31]DH;
+tri     [0:31]DH;
+reg     [0:31]ino_DH;
 wire    [0:31]DL;
 reg     SDCAS;
 reg     [0:11]SDMA;
@@ -91,7 +91,9 @@ wire    WT;
 reg [3:0]CurrState_Sreg0, NextState_Sreg0;
 
 // Diagram actions (continuous assignments allowed only: assign ...)
-// diagram ACTIONS
+//diagram ACTIONS
+
+
 //--------------------------------------------------------------------
 // Machine: Sreg0
 //--------------------------------------------------------------------
@@ -104,73 +106,73 @@ reg  [0:31]date, next_date;
 //----------------------------------
 // NextState logic (combinatorial)
 //----------------------------------
-
 always @ (TT or A or DL or BR0 or adr or chip or CurrState_Sreg0)
-begin: Sreg0_NextState
+begin : Sreg0_NextState
 	NextState_Sreg0 <= CurrState_Sreg0;
 	// Set default values for outputs and signals
+	TEA <= 1'b0;
 	next_adr = adr;
 	next_chip = chip;
 	case (CurrState_Sreg0)	// synopsys parallel_case full_case
 		`Arb:
 		begin
-			AACK <= 1;
-			ARTRY <= 1;
-			TA <= 1;
-			CS <= "11111111";
-			SDRAS <= 1;
-			SDCAS <= 0;
-			WE <= 1;
-			BG0 <= 1;
-			DBG0 <= "Z";
+			AACK<=1'b1;
+			ARTRY<=1'b1;
+			TA<=1'b1;
+			CS<="11111111";
+			SDRAS<=1'b1;
+			SDCAS<=1'b0;
+			WE<=1'b1;
+			BG0<=1'b1;
+			DBG0<=1'bZ;
 			ino_TT <= TT;
-			if (BR0 == 0)
+			if (BR0 == 1'b0)
 				NextState_Sreg0 <= `Arbi;
-			else if (BR0 != 0)
+			else if (BR0!=1'b0)
 				NextState_Sreg0 <= `Arb;
 		end
 		`Arbi:
 		begin
-			BG0 <= 0;
-			DBG0 <= "Z";
-			if (BR0 == 1)
+			BG0<=1'b0;
+			DBG0<=1'bZ;
+			if (BR0==1'b1)
 				NextState_Sreg0 <= `Arbi;
-			else if (BR0 != 1)
+			else if (BR0!=1'b1)
 				NextState_Sreg0 <= `Astpt_dat;
 		end
 		`Arbit:
 		begin
-			BG0 <= 0;
-			DBG0 <= "Z";
-			if (BR0 != 1)
+			BG0<=1'b0;
+			DBG0<=1'bZ;
+			if (BR0!=1'b1)
 				NextState_Sreg0 <= `Arbit;
-			else if (BR0 == 1)
+			else if (BR0==1'b1)
 				NextState_Sreg0 <= `Asteapta_date;
 		end
 		`Arbitrare:
 		begin
-			AACK <= 1;
-			ARTRY <= 1;
-			TA <= 1;
-			CS <= "11111111";
-			WE <= 1;
-			BG0 <= 1;
-			DBG0 <= "Z";
+			AACK<=1'b1;
+			ARTRY<=1'b1;
+			TA<=1'b1;
+			CS<="11111111";
+			WE<=1'b1;
+			BG0<=1'b1;
+			DBG0<=1'bZ;
 			ino_TT <= TT;
 			ino_A <= A;
-			SDRAS <= 1;
-			SDCAS <= 1;
-			if (BR0 == 0)
+			SDRAS<=1'b1;
+			SDCAS<=1'b1;
+			if (BR0==1'b0)
 				NextState_Sreg0 <= `Arbit;
-			else if (BR0 != 0)
+			else if (BR0!=1'b0)
 				NextState_Sreg0 <= `Arbitrare;
 		end
 		`Asteapta_date:
 		begin
-			BG0 <= "Z";
-			DBG0 <= 0;
-			DH <= DL;
-			adr = A;
+			BG0<=1'bZ;
+			DBG0<=1'b0;
+//			ino_DH<=DL;
+			adr <= A;
 			SDMA[0] <= A[9];
 			SDMA[1] <= A[10];
 			SDMA[2] <= A[11];
@@ -183,15 +185,15 @@ begin: Sreg0_NextState
 			SDMA[9] <= A[18];
 			SDMA[10] <= A[19];
 			SDMA[11] <= A[20];
-			ARTRY <= 1;
+			ARTRY<=1'b1;
 			NextState_Sreg0 <= `Scriere_date;
 		end
 		`Astpt_dat:
 		begin
-			BG0 <= "Z";
-			DBG0 <= 0;
-			DH <= DL;
-			adr = A;
+			BG0<=1'bZ;
+			DBG0<=1'b0;
+//			ino_DH<=DL;
+			adr <= A;
 			SDMA[0] <= A[6];
 			SDMA[1] <= A[9];
 			SDMA[2] <= A[7];
@@ -204,59 +206,56 @@ begin: Sreg0_NextState
 			SDMA[9] <= A[26];
 			SDMA[10] <= A[27];
 			SDMA[11] <= A[28];
-			//SDMA[0:2] <= A[7:9];
-            //SDMA[3:11] <=A[21:28];
-            ARTRY <= 1;
+			//SDMA[0:2]<=A[7:9];
+            //SDMA[3:11]<=A[21:28];
+            ARTRY<=1'b1;
 			NextState_Sreg0 <= `Scr_dat;
 		end
 		`Scr_dat:
 		begin
-			BG0 <= "Z";
-			DBG0 <= "Z";
-			AACK <= 0;
-			SDRAS <= 1;
-			chip = "11111110";
-			CS <= "11111110";
-			SDCAS <= 0;
+			BG0<=1'bZ;
+			DBG0<=1'bZ;
+			AACK<=1'b0;
+			SDRAS<=1'b1;
+			chip <= "11111110";
+			CS<="11111110";
+			SDCAS<=1'b0;
 			NextState_Sreg0 <= `Scr_mem;
 		end
-
-        `Scr_mem:
+		`Scr_mem:
 		begin
-			TA <= 0;
-			AACK <= 1;
-			SDRAS <= 1;
-			//DL <= "10101011000000000000000000000000";
-            BG0 <= "Z";
-			SDCAS <= 1;
-			WE <= 0;
-			TA <= 1;
+			TA<=1'b0;
+			AACK<=1'b1;
+			SDRAS<=1'b1;
+			//DL<="10101011000000000000000000000000";
+            BG0<=1'bZ;
+			SDCAS<=1'b1;
+			WE<=1'b0;
+			TA<=1'b1;
 			NextState_Sreg0 <= `Arbitrare;
 		end
-
 		`Scriere_date:
 		begin
-			BG0 <= "Z";
-			DBG0 <= "Z";
-			AACK <= 0;
-			SDRAS <= 0;
-			chip = "11111110";
-			CS <= "11111110";
-			SDCAS <= 1;
+			BG0<=1'bZ;
+			DBG0<=1'bZ;
+			AACK<=1'b0;
+			SDRAS<=1'b0;
+			chip <= "11111110";
+			CS<="11111110";
+			SDCAS<=1'b1;
 			NextState_Sreg0 <= `Scriu_mem;
 		end
-
-        `Scriu_mem:
+		`Scriu_mem:
 		begin
-			TA <= 0;
-			AACK <= 1;
-			SDRAS <= 1;
-			//DL <= "10101011000000000000000000000000";
-            BG0 <= "Z";
-			SDRAS <= 1;
-			SDCAS <= 1;
-			WE <= 0;
-			TA <= 1;
+			TA<=1'b0;
+			AACK<=1'b1;
+			SDRAS<=1'b1;
+			//DL<="10101011000000000000000000000000";
+            BG0<=1'bZ;
+			SDRAS<=1'b1;
+			SDCAS<=1'b1;
+			WE<=1'b0;
+			TA<=1'b1;
 			NextState_Sreg0 <= `Arb;
 		end
 	endcase
@@ -266,17 +265,16 @@ end
 // Current State Logic (sequential)
 //----------------------------------
 always @ (posedge CLK)
-begin: Sreg0_CurrentState
+begin : Sreg0_CurrentState
 	CurrState_Sreg0 <= NextState_Sreg0;
 end
 
-initial CurrState_Sreg0 = `Arb;
-
+initial CurrState_Sreg0 <= `Arb;
 //----------------------------------
 // Registered outputs logic
 //----------------------------------
 always @ (posedge CLK)
-begin: Sreg0_RegOutput
+begin : Sreg0_RegOutput
 	adr <= next_adr;
 	chip <= next_chip;
 end

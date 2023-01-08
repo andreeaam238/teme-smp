@@ -3,7 +3,7 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 12/29/2022 08:55:08 PM
+// Create Date: 01/07/2023 06:48:23 PM
 // Design Name: 
 // Module Name: mpc7410
 // Project Name: 
@@ -19,12 +19,11 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
 module mpc7410(AACK, ARTRY, A, BG, BR, CLK, DBG, DH, DL, DP, TA, TEA, TBST, TS, TSIZ, TT, WT, CI, GBL);
 input   TEA;
 output  GBL;
 output  CI;
-inout   [0:7]DP;
+output   [0:7]DP;
 
 tri     [0:7]DP;
 reg     [0:7]ino_DP;
@@ -41,12 +40,12 @@ input   TA;
 output  BR;
 output  WT;
 input   ARTRY;
-output  [0:31]A;
-input   [0:31]DH;
-output  [0:31]DL;
-output  TBST;
-output  TS;
-output  [0:2]TSIZ;
+output   [0:31]A;
+output   [0:31]DH;
+output   [0:31]DL;
+output   TBST;
+output   TS;
+output   [0:2]TSIZ;
 inout   [0:4]TT;
 
 wire    AACK;
@@ -96,69 +95,70 @@ reg  [0:4]Trans;
 // NextState logic (combinatorial)
 //----------------------------------
 always @ (TBST or TSIZ or ARTRY or BG or DBG or CurrState_Sreg0)
-begin: Sreg0_NextState
+begin : Sreg0_NextState
 	NextState_Sreg0 <= CurrState_Sreg0;
 	// Set default values for outputs and signals
+	GBL <= 1'b0;
+	CI <= 1'b0;
 	// ... 
 	case (CurrState_Sreg0)	// synopsys parallel_case full_case
 		`Cerere_bus:
 		begin
-			BR <= 0;
-			ino_A <= "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
-			ino_DH <= "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
-			ino_TT <= "ZZZZZ";
+			BR<=1'b0;
+			ino_A <= 32'bZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ;
+			ino_DH <= 32'bZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ;
+			ino_TT <= 5'bZZZZZ;
 			ino_TBST <= TBST;
 			ino_TSIZ <= TSIZ;
-			ino_TS <= 1;
+			ino_TS <= 1'b1;
 			ino_ARTRY <= ARTRY;
-			if (BG == 0)
+			if (BG==1'b0)
 				NextState_Sreg0 <= `Transmisie_adresa;
-			else if (BG != 0)
+			else if (BG!=1'b0)
 				NextState_Sreg0 <= `Cerere_bus;
 		end
 		`Fara_date:
 		begin
-			ino_DH <= "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
-			BR <= "Z";
+			ino_DH <= 32'bZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ;
+			BR<=1'bZ;
 			NextState_Sreg0 <= `S1;
 		end
 		`S1:
 		begin
-			BR <= "Z";
-			ino_A <= "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
-			ino_DH <= "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
-			ino_TT <= "ZZZZZ";
+			BR<=1'bZ;
+			ino_A <= 32'bZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ;
+			ino_DH <= 32'bZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ;
+			ino_TT <= 5'bZZZZZ;
 			NextState_Sreg0 <= `Cerere_bus;
 		end
 		`Transmisie_adresa:
 		begin
-			Trans = "00010";
-			BR <= 1;
-			ino_TS <= 0;
-			ino_A <= "10101010101010101010101010101000";
-			ino_DH <= "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
-			ino_TT <= "00010";
-			ino_TBST <= 1;
-			ino_TSIZ <= "001";
-			WT <= 0;
-			
-			if (DBG != 0)
+			Trans <=  5'b00010;
+			BR<=1'b1;
+			ino_TS <= 1'b0;
+			ino_A <= 32'b10101010101010101010101010101000;
+			ino_DH <= 32'bZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ;
+			ino_TT <= 5'b00010;
+			ino_TBST <= 1'b1;
+			ino_TSIZ <= 3'b001;
+			WT<=1'b0;
+			if (DBG!=1'b0)
 			begin
 				NextState_Sreg0 <= `Fara_date;
-				BR <= 0;
-				ino_TS <= 0;
+				BR<=1'b0;
+				ino_TS <= 1'b0;
 			end
-			else if (DBG == 0)
+			else if (DBG==1'b0)
 			begin
 				NextState_Sreg0 <= `Transmisie_date;
-				BR <= 0;
-				ino_TS <= 0;
+				BR<=1'b0;
+				ino_TS <= 1'b0;
 			end
 		end
 		`Transmisie_date:
 		begin
-			ino_DH <= "10101010000000000000000000000000";
-			BR <= "Z";
+			 ino_DH <= 32'b10101010000000000000000000000000;
+			BR<=1'bZ;
 			NextState_Sreg0 <= `S1;
 		end
 	endcase
@@ -168,12 +168,11 @@ end
 // Current State Logic (sequential)
 //----------------------------------
 always @ (posedge CLK)
-begin: Sreg0_CurrentState
+begin : Sreg0_CurrentState
 	CurrState_Sreg0 <= NextState_Sreg0;
 end
 
-initial CurrState_Sreg0 = `S1;
-
+initial CurrState_Sreg0 <= `S1;
 // Copy temporary registers to target inout ports
 assign A = ino_A;
 assign DH = ino_DH;
